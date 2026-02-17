@@ -1,0 +1,44 @@
+
+import { describe, expect, test, afterAll } from '@jest/globals';
+import request from 'supertest';
+
+import app from '../src/app.js';
+import pool from '../src/db/pool.js';
+
+
+afterAll(async () => {
+  await pool.end();
+});
+
+describe('API', () => {
+  test('GET / returns API info', async () => {
+    const response = await request(app).get('/');
+
+    expect(response.status).toBe(200);
+    expect(response.body.message).toBe('API is running');
+    expect(response.body.endpoints).toBeDefined();
+  });
+
+  test('GET /health returns { ok: true }', async () => {
+    const response = await request(app).get('/health');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ ok: true });
+  });
+
+  test('GET /api/users returns an array', async () => {
+    const response = await request(app).get('/api/users');
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBe(true);
+  });
+
+  test('POST /api/users with missing name returns 400', async () => {
+    const response = await request(app)
+      .post('/api/users')
+      .send({ email: 'test@example.com' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBeDefined();
+  });
+});

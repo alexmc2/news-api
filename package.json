@@ -1,0 +1,35 @@
+{
+  "name": "news-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Express API for news articles with PostgreSQL database",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
+    "lint": "eslint .",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down -v",
+    "db:setup": "node scripts/dbSetup.js",
+    "db:seed": "node scripts/dbSeed.js",
+    "db:reset": "node scripts/dbReset.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "helmet": "^8.0.0",
+    "morgan": "^1.10.0",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.9",
+    "supertest": "^7.0.0"
+  }
+}
