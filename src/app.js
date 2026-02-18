@@ -1,4 +1,3 @@
-
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
@@ -7,8 +6,8 @@ import morgan from 'morgan';
 import errorHandler from './middleware/errorHandler.js';
 import notFound from './middleware/notFound.js';
 import healthRouter from './routes/health.js';
-import usersRouter from './routes/users.js';
-
+import authorsRouter from './routes/authors.js';
+import postsRouter from './routes/posts.js';
 
 const app = express();
 
@@ -19,20 +18,20 @@ app.use(morgan('dev'));
 
 app.get('/', (_req, res) => {
   res.json({
-    message: 'API is running',
+    message: 'Guardian 2 API',
     endpoints: {
       health: 'GET /health',
-      users: 'GET /api/users',
-      createUser: 'POST /api/users'
-    }
+      authors: 'GET /api/authors',
+      posts: 'GET /api/posts',
+    },
   });
 });
 
 app.use('/health', healthRouter);
-app.use('/api/users', usersRouter);
+app.use('/api/authors', authorsRouter);
+app.use('/api/posts', postsRouter);
 
 app.use(notFound);
 app.use(errorHandler);
 
 export default app;
-
