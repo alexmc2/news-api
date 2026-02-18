@@ -273,4 +273,34 @@ describe('GET /api/posts — filtering, pagination, sorting', () => {
     expect(response.body.data).toEqual([]);
     expect(response.body.pagination.total).toBeGreaterThan(0);
   });
+
+  test('returns 400 for invalid from date', async () => {
+    const response = await request(app).get('/api/posts?from=not-a-date');
+
+    expect(response.status).toBe(400);
+  });
+
+  test('returns 400 for invalid to date', async () => {
+    const response = await request(app).get('/api/posts?to=Jan+1+2024');
+
+    expect(response.status).toBe(400);
+  });
+
+  test('returns 400 for invalid order', async () => {
+    const response = await request(app).get('/api/posts?order=invalid');
+
+    expect(response.status).toBe(400);
+  });
+
+  test('returns 400 for per_page over max', async () => {
+    const response = await request(app).get('/api/posts?per_page=101');
+
+    expect(response.status).toBe(400);
+  });
+
+  test('returns 400 for empty q', async () => {
+    const response = await request(app).get('/api/posts?q=');
+
+    expect(response.status).toBe(400);
+  });
 });

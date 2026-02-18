@@ -18,6 +18,9 @@ async function listPosts(query = {}) {
   }
 
   if (query.from !== undefined) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(query.from)) {
+      throw new AppError(400, 'Invalid "from" date parameter. Use YYYY-MM-DD.');
+    }
     const d = new Date(query.from);
     if (isNaN(d.getTime())) {
       throw new AppError(400, 'Invalid "from" date parameter. Use YYYY-MM-DD.');
@@ -26,10 +29,15 @@ async function listPosts(query = {}) {
   }
 
   if (query.to !== undefined) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(query.to)) {
+      throw new AppError(400, 'Invalid "to" date parameter. Use YYYY-MM-DD.');
+    }
     const d = new Date(query.to);
     if (isNaN(d.getTime())) {
       throw new AppError(400, 'Invalid "to" date parameter. Use YYYY-MM-DD.');
     }
+    // Use end-of-day so the "to" date is fully inclusive
+    d.setUTCHours(23, 59, 59, 999);
     filters.to = d.toISOString();
   }
 
