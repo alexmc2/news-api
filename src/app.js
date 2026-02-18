@@ -8,6 +8,7 @@ import notFound from './middleware/notFound.js';
 import healthRouter from './routes/health.js';
 import authorsRouter from './routes/authors.js';
 import postsRouter from './routes/posts.js';
+import tagsRouter from './routes/tags.js';
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.get('/', (_req, res) => {
       health: 'GET /health',
       authors: 'GET /api/authors',
       posts: 'GET /api/posts',
+      tags: 'GET /api/tags',
     },
   });
 });
@@ -30,6 +32,7 @@ app.get('/', (_req, res) => {
 app.use('/health', healthRouter);
 app.use('/api/authors', authorsRouter);
 app.use('/api/posts', postsRouter);
+app.use('/api/tags', tagsRouter);
 
 app.use(notFound);
 app.use(errorHandler);
