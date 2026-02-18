@@ -21,7 +21,11 @@ async function getPostById(id) {
 }
 
 async function getPostsByAuthorId(authorId) {
-  return postsRepository.getByAuthorId(Number(authorId));
+  const parsed = Number(authorId);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new AppError(400, 'Invalid author id.');
+  }
+  return postsRepository.getByAuthorId(parsed);
 }
 
 async function createPost(payload) {
