@@ -1,9 +1,9 @@
 import postsService from '../services/postsService.js';
 
-async function listPosts(_req, res, next) {
+async function listPosts(req, res, next) {
   try {
-    const posts = await postsService.listPosts();
-    res.json(posts);
+    const result = await postsService.listPosts(req.query);
+    res.json(result);
   } catch (error) {
     next(error);
   }

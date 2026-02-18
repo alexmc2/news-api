@@ -44,3 +44,4 @@ SELECT p.title, p.summary, p.published_at
 FROM posts p
 JOIN post_tags pt ON pt.post_id = p.id
 WHERE pt.tag_id = 1;
+
