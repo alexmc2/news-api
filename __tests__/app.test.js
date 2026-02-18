@@ -116,4 +116,41 @@ describe('API', () => {
 
     expect(response.status).toBe(404);
   });
+
+  test('GET /api/tags returns an array', async () => {
+    const response = await request(app).get('/api/tags');
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body.length).toBeGreaterThan(0);
+  });
+
+  test('GET /api/posts/1/tags returns tags for a post', async () => {
+    const response = await request(app).get('/api/posts/1/tags');
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body.length).toBeGreaterThan(0);
+    expect(response.body[0]).toHaveProperty('name');
+  });
+
+  test('GET /api/posts/999/tags returns 404', async () => {
+    const response = await request(app).get('/api/posts/999/tags');
+
+    expect(response.status).toBe(404);
+  });
+
+  test('GET /api/tags/1/posts returns posts for a tag', async () => {
+    const response = await request(app).get('/api/tags/1/posts');
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body.length).toBeGreaterThan(0);
+  });
+
+  test('GET /api/tags/999/posts returns 404', async () => {
+    const response = await request(app).get('/api/tags/999/posts');
+
+    expect(response.status).toBe(404);
+  });
 });

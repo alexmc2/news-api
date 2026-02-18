@@ -20,3 +20,21 @@ JOIN authors a ON a.id = p.author_id
 WHERE a.id = 3;
 
 SELECT title, published_at FROM posts ORDER BY published_at ASC;
+
+SELECT * FROM tags;
+
+SELECT t.name, COUNT(pt.post_id) AS usage_count
+FROM tags t
+LEFT JOIN post_tags pt ON pt.tag_id = t.id
+GROUP BY t.id, t.name
+ORDER BY usage_count DESC;
+
+SELECT t.name
+FROM tags t
+JOIN post_tags pt ON pt.tag_id = t.id
+WHERE pt.post_id = 1;
+
+SELECT p.title, p.summary, p.published_at
+FROM posts p
+JOIN post_tags pt ON pt.post_id = p.id
+WHERE pt.tag_id = 1;

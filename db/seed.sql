@@ -20,3 +20,37 @@ INSERT INTO posts (author_id, title, summary, body, published_at) VALUES
 (5, 'Street Art Goes Corporate', 'When murals become marketing, who really benefits?', 'Major brands are commissioning street artists to paint murals in trendy neighbourhoods, blurring the line between art and advertising. Some artists see it as validation and a steady income. Others argue it undermines the rebellious spirit that made the form meaningful in the first place.', '2024-10-14'),
 (5, 'The Streaming Wars Are Over. Nobody Won.', 'Fragmentation has left viewers frustrated and studios bleeding money.', 'Every major media company launched a streaming service, and now most are losing money. Consumers face subscription fatigue, content is spread across too many platforms, and the promise of cord-cutting convenience has given way to a more expensive and confusing landscape than cable ever was.', '2024-02-07'),
 (5, 'Why Live Theatre Is Having a Moment', 'Post-pandemic audiences are flocking back to stages across the country.', 'Theatre attendance has surged past pre-pandemic levels in several major cities. Industry figures credit a combination of pent-up demand for shared live experiences and a new generation of playwrights tackling themes that resonate with younger audiences. But rising production costs threaten to put tickets out of reach for many.', '2025-01-25');
+
+INSERT INTO tags (name) VALUES
+('Technology'),
+('Politics'),
+('Science'),
+('Sport'),
+('Culture'),
+('Environment'),
+('Business');
+
+INSERT INTO post_tags (post_id, tag_id) VALUES
+(1, 1),
+(1, 7),
+(2, 1),
+(3, 1),
+(3, 7),
+(3, 2),
+(4, 2),
+(5, 2),
+(5, 6),
+(6, 3),
+(6, 6),
+(7, 3),
+(8, 3),
+(8, 1),
+(9, 3),
+(10, 3),
+(10, 1),
+(11, 4),
+(11, 7),
+(12, 5),
+(13, 5),
+(13, 1),
+(14, 5);
