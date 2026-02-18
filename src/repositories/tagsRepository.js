@@ -26,11 +26,9 @@ async function getByPostId(postId) {
 
 async function getPostsByTagId(tagId) {
   const result = await pool.query(
-    `SELECT p.id, p.title, p.summary, p.published_at,
-            p.author_id, a.name AS author_name
+    `SELECT p.id, p.title, p.summary, p.published_at
      FROM posts p
      JOIN post_tags pt ON pt.post_id = p.id
-     JOIN authors a ON a.id = p.author_id
      WHERE pt.tag_id = $1
      ORDER BY p.published_at DESC`,
     [tagId],

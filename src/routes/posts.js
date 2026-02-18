@@ -10,5 +10,6 @@ router.get('/:id', postsController.getPost);
 router.patch('/:id', postsController.updatePost);
 router.delete('/:id', postsController.deletePost);
 router.get('/:id/tags', tagsController.getPostTags);
+router.get('/:id/authors', postsController.getPostAuthors);
 
 export default router;

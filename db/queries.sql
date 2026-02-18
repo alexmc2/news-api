@@ -2,24 +2,30 @@ SELECT title FROM posts;
 
 SELECT p.title, a.name AS author
 FROM posts p
-JOIN authors a ON a.id = p.author_id;
+JOIN post_authors pa ON pa.post_id = p.id
+JOIN authors a ON a.id = pa.author_id;
 
 SELECT * FROM authors;
 
 SELECT * FROM authors ORDER BY name ASC;
 
-SELECT a.name, COUNT(p.id) AS post_count
+SELECT a.name, COUNT(pa.post_id) AS post_count
 FROM authors a
-LEFT JOIN posts p ON p.author_id = a.id
+LEFT JOIN post_authors pa ON pa.author_id = a.id
 GROUP BY a.id, a.name
 ORDER BY post_count DESC;
 
 SELECT p.title, p.summary, p.published_at
 FROM posts p
-JOIN authors a ON a.id = p.author_id
-WHERE a.id = 3;
+JOIN post_authors pa ON pa.post_id = p.id
+WHERE pa.author_id = 3;
 
 SELECT title, published_at FROM posts ORDER BY published_at ASC;
+
+SELECT a.name
+FROM authors a
+JOIN post_authors pa ON pa.author_id = a.id
+WHERE pa.post_id = 2;
 
 SELECT * FROM tags;
 
