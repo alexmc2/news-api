@@ -135,25 +135,82 @@ All errors return JSON with `status` and `message`:
 | 422    | Missing or invalid fields |
 | 500    | Unexpected server error   |
 
-## Filtering, Pagination, Sorting (planned)
+## Filtering, Pagination, Sorting
 
-Not yet implemented. Planned query parameters for `GET /api/posts`:
+Query parameters for `GET /api/posts`:
 
 | Param     | Type    | Description                                         |
 | --------- | ------- | --------------------------------------------------- |
 | author_id | integer | Filter by author                                    |
 | from      | date    | Posts published on or after this date               |
 | to        | date    | Posts published on or before this date              |
-| q         | string  | Search title and summary                            |
+| q         | string  | Search title and summary (case-insensitive)         |
 | sort      | string  | `published_at` or `title` (default: `published_at`) |
 | order     | string  | `asc` or `desc` (default: `desc`)                   |
 | page      | integer | Page number (default: 1)                            |
-| per_page  | integer | Results per page (default: 20)                      |
+| per_page  | integer | Results per page (default: 20, max: 100)            |
 
-### Example: filter by author and date range
+### Example 1: filter by author and date range
 
 `GET /api/posts?author_id=3&from=2024-01-01&to=2024-12-31`
 
-### Example: search with pagination
+**Response** `200 OK`
+
+```json
+{
+  "data": [
+    {
+      "id": 10,
+      "title": "Mars Sample Return: The Most Ambitious Mission Ever",
+      "summary": "NASA and ESA plan to bring Martian rock to Earth.",
+      "body": "The Mars Sample Return mission represents...",
+      "published_at": "2024-12-01T00:00:00.000Z"
+    },
+    {
+      "id": 7,
+      "title": "CRISPR Babies: Five Years Later",
+      "summary": "Where the gene-editing debate stands now.",
+      "body": "It has been five years since...",
+      "published_at": "2024-08-22T00:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 20,
+    "total": 6,
+    "total_pages": 1
+  }
+}
+```
+
+### Example 2: search with pagination
 
 `GET /api/posts?q=climate&page=1&per_page=5`
+
+**Response** `200 OK`
+
+```json
+{
+  "data": [
+    {
+      "id": 5,
+      "title": "Inside the New Climate Bill",
+      "summary": "A breakdown of the legislation that could reshape energy policy.",
+      "body": "After months of negotiations...",
+      "published_at": "2024-11-18T00:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 5,
+    "total": 1,
+    "total_pages": 1
+  }
+}
+```
+
+### Error cases
+
+| Status | When                                                                           |
+| ------ | ------------------------------------------------------------------------------ |
+| 400    | Invalid `author_id`, `from`, `to`, `q`, `sort`, `order`, `page`, or `per_page` |

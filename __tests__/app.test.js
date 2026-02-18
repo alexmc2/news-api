@@ -39,11 +39,12 @@ describe('API', () => {
     expect(response.body.message).toBeDefined();
   });
 
-  test('GET /api/posts returns an array', async () => {
+  test('GET /api/posts returns paginated data', async () => {
     const response = await request(app).get('/api/posts');
 
     expect(response.status).toBe(200);
-    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body).toHaveProperty('data');
+    expect(Array.isArray(response.body.data)).toBe(true);
   });
 
   test('GET /api/posts/999 returns 404', async () => {
@@ -187,5 +188,97 @@ describe('API', () => {
     const response = await request(app).get('/api/posts/999/authors');
 
     expect(response.status).toBe(404);
+  });
+});
+
+describe('GET /api/posts — filtering, pagination, sorting', () => {
+  test('returns paginated response shape', async () => {
+    const response = await request(app).get('/api/posts');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('data');
+    expect(response.body).toHaveProperty('pagination');
+    expect(Array.isArray(response.body.data)).toBe(true);
+    expect(response.body.pagination).toEqual(
+      expect.objectContaining({
+        page: expect.any(Number),
+        per_page: expect.any(Number),
+        total: expect.any(Number),
+        total_pages: expect.any(Number),
+      }),
+    );
+  });
+
+  test('respects per_page and page', async () => {
+    const response = await request(app).get('/api/posts?per_page=2&page=1');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.length).toBeLessThanOrEqual(2);
+    expect(response.body.pagination.page).toBe(1);
+    expect(response.body.pagination.per_page).toBe(2);
+  });
+
+  test('filters by author_id', async () => {
+    const response = await request(app).get('/api/posts?author_id=4');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.length).toBeGreaterThan(0);
+  });
+
+  test('filters by date range', async () => {
+    const response = await request(app).get(
+      '/api/posts?from=2024-01-01&to=2024-06-30',
+    );
+
+    expect(response.status).toBe(200);
+    for (const post of response.body.data) {
+      const d = new Date(post.published_at);
+      expect(d >= new Date('2024-01-01')).toBe(true);
+      expect(d <= new Date('2024-06-30')).toBe(true);
+    }
+  });
+
+  test('searches by q', async () => {
+    const response = await request(app).get('/api/posts?q=climate');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.length).toBeGreaterThan(0);
+  });
+
+  test('sorts by title asc', async () => {
+    const response = await request(app).get(
+      '/api/posts?sort=title&order=asc&per_page=100',
+    );
+
+    expect(response.status).toBe(200);
+    const titles = response.body.data.map((p) => p.title);
+    const sorted = [...titles].sort((a, b) => a.localeCompare(b));
+    expect(titles).toEqual(sorted);
+  });
+
+  test('returns 400 for invalid author_id', async () => {
+    const response = await request(app).get('/api/posts?author_id=abc');
+
+    expect(response.status).toBe(400);
+  });
+
+  test('returns 400 for invalid page', async () => {
+    const response = await request(app).get('/api/posts?page=-1');
+
+    expect(response.status).toBe(400);
+  });
+
+  test('returns 400 for invalid sort', async () => {
+    const response = await request(app).get('/api/posts?sort=invalid');
+
+    expect(response.status).toBe(400);
+  });
+
+  test('returns empty data for page beyond total', async () => {
+    const response = await request(app).get('/api/posts?page=9999');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual([]);
+    expect(response.body.pagination.total).toBeGreaterThan(0);
   });
 });
