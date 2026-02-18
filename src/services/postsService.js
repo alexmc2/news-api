@@ -20,17 +20,17 @@ async function listPosts(query = {}) {
   if (query.from !== undefined) {
     const d = new Date(query.from);
     if (isNaN(d.getTime())) {
-      throw new AppError(400, 'Invalid "from" date parameter.');
+      throw new AppError(400, 'Invalid "from" date parameter. Use YYYY-MM-DD.');
     }
-    filters.from = query.from;
+    filters.from = d.toISOString();
   }
 
   if (query.to !== undefined) {
     const d = new Date(query.to);
     if (isNaN(d.getTime())) {
-      throw new AppError(400, 'Invalid "to" date parameter.');
+      throw new AppError(400, 'Invalid "to" date parameter. Use YYYY-MM-DD.');
     }
-    filters.to = query.to;
+    filters.to = d.toISOString();
   }
 
   if (query.q !== undefined) {
@@ -73,7 +73,7 @@ async function listPosts(query = {}) {
 
   const { rows, total } = await postsRepository.getAll(filters);
 
-  const totalPages = Math.ceil(total / perPage) || 1;
+  const totalPages = total === 0 ? 0 : Math.ceil(total / perPage);
 
   return {
     data: rows,

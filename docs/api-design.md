@@ -142,8 +142,8 @@ Query parameters for `GET /api/posts`:
 | Param     | Type    | Description                                         |
 | --------- | ------- | --------------------------------------------------- |
 | author_id | integer | Filter by author                                    |
-| from      | date    | Posts published on or after this date               |
-| to        | date    | Posts published on or before this date              |
+| from      | date    | Posts on or after this date (`YYYY-MM-DD`)          |
+| to        | date    | Posts on or before this date (`YYYY-MM-DD`)         |
 | q         | string  | Search title and summary (case-insensitive)         |
 | sort      | string  | `published_at` or `title` (default: `published_at`) |
 | order     | string  | `asc` or `desc` (default: `desc`)                   |

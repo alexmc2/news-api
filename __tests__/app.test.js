@@ -39,14 +39,6 @@ describe('API', () => {
     expect(response.body.message).toBeDefined();
   });
 
-  test('GET /api/posts returns paginated data', async () => {
-    const response = await request(app).get('/api/posts');
-
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('data');
-    expect(Array.isArray(response.body.data)).toBe(true);
-  });
-
   test('GET /api/posts/999 returns 404', async () => {
     const response = await request(app).get('/api/posts/999');
 

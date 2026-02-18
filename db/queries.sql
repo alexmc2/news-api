@@ -45,36 +45,3 @@ FROM posts p
 JOIN post_tags pt ON pt.post_id = p.id
 WHERE pt.tag_id = 1;
 
--- ============================================================
--- Task 4: What else could we add to this database?
--- ============================================================
---
--- 1. Comments — a comments table with post_id FK, author name
---    or user_id, body, and created_at. Supports threaded
---    replies via a parent_comment_id self-referencing FK.
---
--- 2. Categories — broader groupings than tags, e.g. "Opinion",
---    "News", "Review". Each post belongs to one category
---    (many-to-one), giving an extra level of organisation.
---
--- 3. Likes / Reactions — a table linking users to posts (or
---    comments) with a reaction type. Unique constraint on
---    (user_id, post_id) prevents duplicate likes.
---
--- 4. Media / Images — a table storing image URLs, alt text,
---    width, height, and a position for ordering. Linked to
---    posts via post_id FK, allowing multiple images per post.
---
--- 5. Draft / Published status — add a `status` column to
---    posts (e.g. 'draft', 'published', 'archived') so authors
---    can save work-in-progress before publishing.
---
--- 6. User accounts & roles — separate readers from authors
---    and admins. A roles table or a role column on a users
---    table, with permissions controlling who can publish,
---    edit, or moderate.
---
--- 7. Revision history — store previous versions of a post
---    in a post_revisions table so editors can view diffs and
---    roll back changes.
--- ============================================================
