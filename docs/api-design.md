@@ -129,9 +129,9 @@ All errors return JSON with `status` and `message`:
 | 422    | Missing or invalid fields |
 | 500    | Unexpected server error   |
 
-## Filtering, Pagination, Sorting
+## Filtering, Pagination, Sorting (planned)
 
-### Query parameters for `GET /api/posts`
+Not yet implemented. Planned query parameters for `GET /api/posts`:
 
 | Param     | Type    | Description                                         |
 | --------- | ------- | --------------------------------------------------- |

@@ -27,23 +27,28 @@ async function getPostsByAuthorId(authorId) {
 async function createPost(payload) {
   const { author_id, title, summary, body } = payload;
 
-  if (!title || typeof title !== 'string') {
+  if (!title || typeof title !== 'string' || title.trim() === '') {
     throw new AppError(422, '"title" is required.');
   }
-  if (!body || typeof body !== 'string') {
+  if (!body || typeof body !== 'string' || body.trim() === '') {
     throw new AppError(422, '"body" is required.');
   }
-  if (!author_id) {
-    throw new AppError(422, '"author_id" is required.');
+
+  const parsedAuthorId = Number(author_id);
+  if (!Number.isInteger(parsedAuthorId) || parsedAuthorId < 1) {
+    throw new AppError(
+      422,
+      '"author_id" is required and must be a valid integer.',
+    );
   }
 
-  const author = await authorsRepository.getById(Number(author_id));
+  const author = await authorsRepository.getById(parsedAuthorId);
   if (!author) {
     throw new AppError(422, 'Author does not exist.');
   }
 
   return postsRepository.create({
-    author_id: Number(author_id),
+    author_id: parsedAuthorId,
     title: title.trim(),
     summary: typeof summary === 'string' ? summary.trim() : null,
     body: body.trim(),
@@ -73,6 +78,13 @@ async function updatePost(id, payload) {
 
   if (Object.keys(fields).length === 0) {
     throw new AppError(422, 'No valid fields to update.');
+  }
+
+  if ('title' in fields && fields.title === '') {
+    throw new AppError(422, '"title" cannot be empty.');
+  }
+  if ('body' in fields && fields.body === '') {
+    throw new AppError(422, '"body" cannot be empty.');
   }
 
   return postsRepository.update(parsed, fields);

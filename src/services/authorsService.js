@@ -22,10 +22,10 @@ async function getAuthorById(id) {
 async function createAuthor(payload) {
   const { name, email, password_hash, bio } = payload;
 
-  if (!name || typeof name !== 'string') {
+  if (!name || typeof name !== 'string' || name.trim() === '') {
     throw new AppError(422, '"name" is required.');
   }
-  if (!email || typeof email !== 'string') {
+  if (!email || typeof email !== 'string' || email.trim() === '') {
     throw new AppError(422, '"email" is required.');
   }
   if (!password_hash || typeof password_hash !== 'string') {
