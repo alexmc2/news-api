@@ -29,7 +29,7 @@ async function getPostsByAuthorId(authorId) {
 }
 
 async function createPost(payload) {
-  const { author_id, title, summary, body } = payload;
+  const { author_ids, title, summary, body } = payload;
 
   if (!title || typeof title !== 'string' || title.trim() === '') {
     throw new AppError(422, '"title" is required.');
@@ -37,25 +37,29 @@ async function createPost(payload) {
   if (!body || typeof body !== 'string' || body.trim() === '') {
     throw new AppError(422, '"body" is required.');
   }
-
-  const parsedAuthorId = Number(author_id);
-  if (!Number.isInteger(parsedAuthorId) || parsedAuthorId < 1) {
-    throw new AppError(
-      422,
-      '"author_id" is required and must be a valid integer.',
-    );
+  if (!Array.isArray(author_ids) || author_ids.length === 0) {
+    throw new AppError(422, '"author_ids" must be a non-empty array.');
   }
 
-  const author = await authorsRepository.getById(parsedAuthorId);
-  if (!author) {
-    throw new AppError(422, 'Author does not exist.');
+  const parsed = author_ids.map(Number);
+  for (const id of parsed) {
+    if (!Number.isInteger(id) || id < 1) {
+      throw new AppError(422, 'Each author_id must be a valid integer.');
+    }
+  }
+
+  for (const id of parsed) {
+    const author = await authorsRepository.getById(id);
+    if (!author) {
+      throw new AppError(422, `Author with id ${id} does not exist.`);
+    }
   }
 
   return postsRepository.create({
-    author_id: parsedAuthorId,
     title: title.trim(),
     summary: typeof summary === 'string' ? summary.trim() : null,
     body: body.trim(),
+    author_ids: parsed,
   });
 }
 
@@ -94,6 +98,20 @@ async function updatePost(id, payload) {
   return postsRepository.update(parsed, fields);
 }
 
+async function getAuthorsByPostId(postId) {
+  const parsed = Number(postId);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new AppError(400, 'Invalid post id.');
+  }
+
+  const post = await postsRepository.getById(parsed);
+  if (!post) {
+    throw new AppError(404, 'Post not found.');
+  }
+
+  return postsRepository.getAuthorsByPostId(parsed);
+}
+
 async function deletePost(id) {
   const parsed = Number(id);
   if (!Number.isInteger(parsed) || parsed < 1) {
@@ -110,6 +128,7 @@ export default {
   listPosts,
   getPostById,
   getPostsByAuthorId,
+  getAuthorsByPostId,
   createPost,
   updatePost,
   deletePost,

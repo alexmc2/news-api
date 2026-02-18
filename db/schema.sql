@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS post_authors;
 DROP TABLE IF EXISTS post_tags;
 DROP TABLE IF EXISTS tags;
 DROP TABLE IF EXISTS posts;
@@ -14,11 +15,16 @@ CREATE TABLE authors (
 
 CREATE TABLE posts (
     id SERIAL PRIMARY KEY,
-    author_id INTEGER NOT NULL REFERENCES authors(id),
     title VARCHAR(255) NOT NULL,
     summary TEXT,
     body TEXT NOT NULL,
     published_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE post_authors (
+    post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+    author_id INTEGER REFERENCES authors(id) ON DELETE CASCADE,
+    PRIMARY KEY (post_id, author_id)
 );
 
 CREATE TABLE tags (

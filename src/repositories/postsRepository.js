@@ -2,10 +2,8 @@ import pool from '../db/pool.js';
 
 async function getAll() {
   const result = await pool.query(
-    `SELECT p.id, p.title, p.summary, p.body, p.published_at,
-            p.author_id, a.name AS author_name
+    `SELECT p.id, p.title, p.summary, p.body, p.published_at
      FROM posts p
-     JOIN authors a ON a.id = p.author_id
      ORDER BY p.published_at DESC`,
   );
   return result.rows;
@@ -13,10 +11,8 @@ async function getAll() {
 
 async function getById(id) {
   const result = await pool.query(
-    `SELECT p.id, p.title, p.summary, p.body, p.published_at,
-            p.author_id, a.name AS author_name
+    `SELECT p.id, p.title, p.summary, p.body, p.published_at
      FROM posts p
-     JOIN authors a ON a.id = p.author_id
      WHERE p.id = $1`,
     [id],
   );
@@ -25,23 +21,56 @@ async function getById(id) {
 
 async function getByAuthorId(authorId) {
   const result = await pool.query(
-    `SELECT id, title, summary, body, published_at, author_id
-     FROM posts
-     WHERE author_id = $1
-     ORDER BY published_at DESC`,
+    `SELECT p.id, p.title, p.summary, p.body, p.published_at
+     FROM posts p
+     JOIN post_authors pa ON pa.post_id = p.id
+     WHERE pa.author_id = $1
+     ORDER BY p.published_at DESC`,
     [authorId],
   );
   return result.rows;
 }
 
-async function create({ author_id, title, summary, body }) {
+async function getAuthorsByPostId(postId) {
   const result = await pool.query(
-    `INSERT INTO posts (author_id, title, summary, body)
-     VALUES ($1, $2, $3, $4)
-     RETURNING id, author_id, title, summary, body, published_at`,
-    [author_id, title, summary || null, body],
+    `SELECT a.id, a.name, a.email, a.bio, a.joined_at
+     FROM authors a
+     JOIN post_authors pa ON pa.author_id = a.id
+     WHERE pa.post_id = $1
+     ORDER BY a.name`,
+    [postId],
   );
-  return result.rows[0];
+  return result.rows;
+}
+
+async function create({ title, summary, body, author_ids }) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const postResult = await client.query(
+      `INSERT INTO posts (title, summary, body)
+       VALUES ($1, $2, $3)
+       RETURNING id, title, summary, body, published_at`,
+      [title, summary || null, body],
+    );
+    const post = postResult.rows[0];
+
+    for (const authorId of author_ids) {
+      await client.query(
+        'INSERT INTO post_authors (post_id, author_id) VALUES ($1, $2)',
+        [post.id, authorId],
+      );
+    }
+
+    await client.query('COMMIT');
+    return post;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 async function update(id, fields) {
@@ -54,7 +83,7 @@ async function update(id, fields) {
   const result = await pool.query(
     `UPDATE posts SET ${setClauses.join(', ')}
      WHERE id = $${values.length}
-     RETURNING id, author_id, title, summary, body, published_at`,
+     RETURNING id, title, summary, body, published_at`,
     values,
   );
   return result.rows[0] || null;
@@ -68,4 +97,12 @@ async function remove(id) {
   return result.rows[0] || null;
 }
 
-export default { getAll, getById, getByAuthorId, create, update, remove };
+export default {
+  getAll,
+  getById,
+  getByAuthorId,
+  getAuthorsByPostId,
+  create,
+  update,
+  remove,
+};

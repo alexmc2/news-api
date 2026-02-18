@@ -45,4 +45,20 @@ async function deletePost(req, res, next) {
   }
 }
 
-export default { listPosts, getPost, createPost, updatePost, deletePost };
+async function getPostAuthors(req, res, next) {
+  try {
+    const authors = await postsService.getAuthorsByPostId(req.params.id);
+    res.json(authors);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export default {
+  listPosts,
+  getPost,
+  createPost,
+  updatePost,
+  deletePost,
+  getPostAuthors,
+};

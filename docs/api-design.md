@@ -15,26 +15,34 @@
 
 ### Posts
 
-| Field        | Type         | Constraints                         |
-| ------------ | ------------ | ----------------------------------- |
-| id           | integer      | primary key, auto-increment         |
-| author_id    | integer      | required, foreign key → authors(id) |
-| title        | varchar(255) | required                            |
-| summary      | text         | optional                            |
-| body         | text         | required                            |
-| published_at | timestamp    | default now                         |
+| Field        | Type         | Constraints                 |
+| ------------ | ------------ | --------------------------- |
+| id           | integer      | primary key, auto-increment |
+| title        | varchar(255) | required                    |
+| summary      | text         | optional                    |
+| body         | text         | required                    |
+| published_at | timestamp    | default now                 |
+
+### Post Authors (junction table)
+
+| Field     | Type    | Constraints                               |
+| --------- | ------- | ----------------------------------------- |
+| post_id   | integer | foreign key → posts(id), cascade delete   |
+| author_id | integer | foreign key → authors(id), cascade delete |
+|           |         | primary key (post_id, author_id)          |
 
 ## Endpoints
 
 ### Posts
 
-| Method | URL            | Status          | Description             |
-| ------ | -------------- | --------------- | ----------------------- |
-| GET    | /api/posts     | 200             | List all posts          |
-| POST   | /api/posts     | 201             | Create a post           |
-| GET    | /api/posts/:id | 200 / 404       | Get a single post       |
-| PATCH  | /api/posts/:id | 200 / 404 / 422 | Partially update a post |
-| DELETE | /api/posts/:id | 204 / 404       | Delete a post           |
+| Method | URL                    | Status          | Description             |
+| ------ | ---------------------- | --------------- | ----------------------- |
+| GET    | /api/posts             | 200             | List all posts          |
+| POST   | /api/posts             | 201             | Create a post           |
+| GET    | /api/posts/:id         | 200 / 404       | Get a single post       |
+| PATCH  | /api/posts/:id         | 200 / 404 / 422 | Partially update a post |
+| DELETE | /api/posts/:id         | 204 / 404       | Delete a post           |
+| GET    | /api/posts/:id/authors | 200 / 404       | List authors for a post |
 
 ### Authors
 
@@ -53,7 +61,7 @@
 
 ```json
 {
-  "author_id": 1,
+  "author_ids": [1, 3],
   "title": "My New Post",
   "summary": "A brief summary",
   "body": "The full article text."
@@ -65,11 +73,10 @@
 ```json
 {
   "id": 15,
-  "author_id": 1,
   "title": "My New Post",
   "summary": "A brief summary",
   "body": "The full article text.",
-  "published_at": "2026-02-17T10:00:00.000Z"
+  "published_at": "2026-02-18T10:00:00.000Z"
 }
 ```
 
@@ -88,11 +95,10 @@
 ```json
 {
   "id": 15,
-  "author_id": 1,
   "title": "Updated Title",
   "summary": "A brief summary",
   "body": "The full article text.",
-  "published_at": "2026-02-17T10:00:00.000Z"
+  "published_at": "2026-02-18T10:00:00.000Z"
 }
 ```
 
@@ -102,7 +108,7 @@
 
 - `title` — required, string
 - `body` — required, string
-- `author_id` — required, must reference an existing author
+- `author_ids` — required, non-empty array of existing author ids
 
 ### Creating an author
 
