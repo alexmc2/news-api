@@ -1,4 +1,6 @@
-# news-api
+# News API and Frontend
+
+![Screenshot](frontend/images/image.webp)
 
 JS backend + TS frontend in a single repo.
 
@@ -77,8 +79,3 @@ Railway-style template values like `${{PGUSER}}` are supported and resolved from
 
 `db:setup` and `db:seed` now refuse non-local databases by default.
 
-If you intentionally want to run them against a remote DB, set:
-
-```bash
-ALLOW_DESTRUCTIVE_DB_OPERATIONS=true
-```
