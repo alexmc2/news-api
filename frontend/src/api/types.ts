@@ -49,3 +49,16 @@ export type PostsQuery = {
   sort?: SortField;
   to?: string;
 };
+
+export type PostCreate = {
+  title: string;
+  summary?: string;
+  body: string;
+  author_ids: number[];
+};
+
+export type PostUpdate = {
+  title?: string;
+  summary?: string;
+  body?: string;
+};

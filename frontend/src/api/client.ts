@@ -1,8 +1,11 @@
 import type {
   Author,
   HealthResponse,
+  Post,
+  PostCreate,
   PostsQuery,
   PostsResponse,
+  PostUpdate,
   Tag,
 } from './types';
 
@@ -34,7 +37,7 @@ async function readError(response: Response): Promise<ApiRequestError> {
   const message =
     typeof payload?.message === 'string' && payload.message.trim() !== ''
       ? payload.message
-      : `Request failed with status ${response.status}.`;
+      : `Request failed with status ${status}.`;
 
   return new ApiRequestError(status, message);
 }
@@ -47,6 +50,52 @@ async function apiGet<T>(path: string, signal?: AbortSignal): Promise<T> {
   }
 
   return (await response.json()) as T;
+}
+
+async function apiPost<T>(
+  path: string,
+  body: unknown,
+  signal?: AbortSignal,
+): Promise<T> {
+  const response = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal,
+  });
+
+  if (!response.ok) {
+    throw await readError(response);
+  }
+
+  return (await response.json()) as T;
+}
+
+async function apiPatch<T>(
+  path: string,
+  body: unknown,
+  signal?: AbortSignal,
+): Promise<T> {
+  const response = await fetch(path, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal,
+  });
+
+  if (!response.ok) {
+    throw await readError(response);
+  }
+
+  return (await response.json()) as T;
+}
+
+async function apiDelete(path: string, signal?: AbortSignal): Promise<void> {
+  const response = await fetch(path, { method: 'DELETE', signal });
+
+  if (!response.ok) {
+    throw await readError(response);
+  }
 }
 
 function createQueryString(params: PostsQuery): string {
@@ -84,5 +133,31 @@ export function getPosts(
   params: PostsQuery,
   signal?: AbortSignal,
 ): Promise<PostsResponse> {
-  return apiGet<PostsResponse>(`/api/posts${createQueryString(params)}`, signal);
+  return apiGet<PostsResponse>(
+    `/api/posts${createQueryString(params)}`,
+    signal,
+  );
+}
+
+export function getPost(id: number, signal?: AbortSignal): Promise<Post> {
+  return apiGet<Post>(`/api/posts/${id}`, signal);
+}
+
+export function createPost(
+  data: PostCreate,
+  signal?: AbortSignal,
+): Promise<Post> {
+  return apiPost<Post>('/api/posts', data, signal);
+}
+
+export function updatePost(
+  id: number,
+  data: PostUpdate,
+  signal?: AbortSignal,
+): Promise<Post> {
+  return apiPatch<Post>(`/api/posts/${id}`, data, signal);
+}
+
+export function deletePost(id: number, signal?: AbortSignal): Promise<void> {
+  return apiDelete(`/api/posts/${id}`, signal);
 }

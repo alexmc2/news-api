@@ -111,4 +111,35 @@ describe('App', () => {
       expect(postRequests[postRequests.length - 1]).toContain('q=climate');
     });
   });
+
+  test('shows checking state with neutral styling while health is pending', () => {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url.startsWith('/health')) {
+        return new Promise<Response>(() => {});
+      }
+
+      if (url.startsWith('/api/posts')) {
+        return Promise.resolve(
+          jsonResponse({
+            data: [],
+            pagination: {
+              page: 1,
+              per_page: 6,
+              total: 0,
+              total_pages: 0,
+            },
+          }),
+        );
+      }
+
+      return Promise.resolve(jsonResponse([]));
+    });
+
+    render(<App />);
+
+    const status = screen.getByText('Checking');
+    expect(status).toHaveClass('text-slate-500');
+  });
 });

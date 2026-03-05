@@ -42,10 +42,30 @@ function parseBoolean(value) {
   return null;
 }
 
+function formatHostForConnectionString(host) {
+  if (typeof host !== 'string') {
+    return host;
+  }
+
+  const trimmed = host.trim();
+
+  if (!trimmed) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+    return trimmed;
+  }
+
+  return trimmed.includes(':') ? `[${trimmed}]` : trimmed;
+}
+
 function buildUrlFromPgVariables() {
   const user = resolveTemplate(process.env.PGUSER);
   const password = resolveTemplate(process.env.PGPASSWORD);
-  const host = resolveTemplate(process.env.PGHOST);
+  const host = formatHostForConnectionString(
+    resolveTemplate(process.env.PGHOST),
+  );
   const port = resolveTemplate(process.env.PGPORT) || '5432';
   const database = resolveTemplate(process.env.PGDATABASE);
 
@@ -53,7 +73,7 @@ function buildUrlFromPgVariables() {
     return null;
   }
 
-  return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${database}`;
+  return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${encodeURIComponent(database)}`;
 }
 
 function getConnectionString() {
@@ -95,6 +115,18 @@ function shouldUseSsl(connectionString) {
   return !isLocalConnection(connectionString);
 }
 
+function shouldRejectUnauthorized() {
+  const explicitRejectUnauthorized = parseBoolean(
+    process.env.DATABASE_SSL_REJECT_UNAUTHORIZED,
+  );
+  if (explicitRejectUnauthorized !== null) {
+    return explicitRejectUnauthorized;
+  }
+
+  const sslMode = process.env.PGSSLMODE?.trim().toLowerCase();
+  return sslMode === 'verify-ca' || sslMode === 'verify-full';
+}
+
 function getPoolConfig() {
   const connectionString = getConnectionString();
 
@@ -106,8 +138,16 @@ function getPoolConfig() {
 
   return {
     connectionString,
-    ssl: shouldUseSsl(connectionString) ? { rejectUnauthorized: false } : false,
+    ssl: shouldUseSsl(connectionString)
+      ? { rejectUnauthorized: shouldRejectUnauthorized() }
+      : false,
   };
 }
 
-export { getConnectionString, getPoolConfig, isLocalConnection, shouldUseSsl };
+export {
+  getConnectionString,
+  getPoolConfig,
+  isLocalConnection,
+  shouldUseSsl,
+  shouldRejectUnauthorized,
+};

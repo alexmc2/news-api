@@ -7,14 +7,22 @@ import {
   getHealth,
   getPosts,
   getTags,
-} from './api';
+} from './api/client';
+import PostDetail from './posts/PostDetail';
+import PostForm from './posts/PostForm';
 import type {
   PostsPagination,
   PostsQuery,
   PostsResponse,
   SortField,
   SortOrder,
-} from './types';
+} from './api/types';
+
+type View =
+  | { name: 'list' }
+  | { name: 'detail'; postId: number }
+  | { name: 'create' }
+  | { name: 'edit'; postId: number };
 
 type FilterDraft = {
   authorId: string;
@@ -117,7 +125,17 @@ function statusLabel(value: boolean | null): string {
   return value ? 'Connected' : 'Unavailable';
 }
 
+function statusToneClass(value: boolean | null): string {
+  if (value === null) {
+    return 'text-slate-500';
+  }
+
+  return value ? 'text-teal-700' : 'text-rose-700';
+}
+
 export default function App() {
+  const [view, setView] = useState<View>({ name: 'list' });
+
   const [draftFilters, setDraftFilters] =
     useState<FilterDraft>(DEFAULT_FILTERS);
   const [activeFilters, setActiveFilters] =
@@ -268,6 +286,23 @@ export default function App() {
     setRefreshKey((current) => current + 1);
   }
 
+  function goToList() {
+    setView({ name: 'list' });
+    setRefreshKey((current) => current + 1);
+  }
+
+  function goToDetail(postId: number) {
+    setView({ name: 'detail', postId });
+  }
+
+  function goToCreate() {
+    setView({ name: 'create' });
+  }
+
+  function goToEdit(postId: number) {
+    setView({ name: 'edit', postId });
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-slate-100 text-slate-900">
       <div className="pointer-events-none absolute inset-0">
@@ -292,13 +327,22 @@ export default function App() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={refreshData}
-              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-teal-500 hover:text-teal-700"
-            >
-              Refresh Data
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={goToCreate}
+                className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800"
+              >
+                New Post
+              </button>
+              <button
+                type="button"
+                onClick={refreshData}
+                className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-teal-500 hover:text-teal-700"
+              >
+                Refresh Data
+              </button>
+            </div>
           </div>
         </header>
 
@@ -308,9 +352,7 @@ export default function App() {
               Backend
             </p>
             <p
-              className={`mt-2 text-2xl font-semibold ${
-                healthStatus ? 'text-teal-700' : 'text-rose-700'
-              }`}
+              className={`mt-2 text-2xl font-semibold ${statusToneClass(healthStatus)}`}
             >
               {statusLabel(healthStatus)}
             </p>
@@ -341,219 +383,246 @@ export default function App() {
           </div>
         ) : null}
 
-        <section className="reveal reveal-delay-1 rounded-3xl border border-slate-900/10 bg-white/85 p-5 shadow-sm sm:p-6">
-          <h2 className="text-2xl font-semibold text-slate-900">
-            Browse Posts
-          </h2>
+        {view.name === 'detail' ? (
+          <PostDetail
+            postId={view.postId}
+            onBack={goToList}
+            onEdit={goToEdit}
+            onDeleted={goToList}
+          />
+        ) : view.name === 'create' ? (
+          <PostForm onBack={goToList} onSaved={(post) => goToDetail(post.id)} />
+        ) : view.name === 'edit' ? (
+          <PostForm
+            postId={view.postId}
+            onBack={() => goToDetail(view.postId)}
+            onSaved={(post) => goToDetail(post.id)}
+          />
+        ) : (
+          <>
+            <section className="reveal reveal-delay-1 rounded-3xl border border-slate-900/10 bg-white/85 p-5 shadow-sm sm:p-6">
+              <h2 className="text-2xl font-semibold text-slate-900">
+                Browse Posts
+              </h2>
 
-          <form
-            onSubmit={applyFilters}
-            className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
-          >
-            <label className="text-sm font-medium text-slate-700 lg:col-span-2">
-              Search (`q`)
-              <input
-                value={draftFilters.q}
-                onChange={(event) => setDraftField('q', event.target.value)}
-                placeholder="climate, mission, policy"
-                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
-              />
-            </label>
-
-            <label className="text-sm font-medium text-slate-700">
-              Author ID
-              <input
-                value={draftFilters.authorId}
-                onChange={(event) =>
-                  setDraftField('authorId', event.target.value)
-                }
-                inputMode="numeric"
-                placeholder="1"
-                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
-              />
-            </label>
-
-            <label className="text-sm font-medium text-slate-700">
-              Results / page
-              <select
-                value={draftFilters.perPage}
-                onChange={(event) =>
-                  setDraftField('perPage', event.target.value)
-                }
-                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+              <form
+                onSubmit={applyFilters}
+                className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
               >
-                {PER_PAGE_OPTIONS.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <label className="text-sm font-medium text-slate-700 lg:col-span-2">
+                  Search (`q`)
+                  <input
+                    value={draftFilters.q}
+                    onChange={(event) => setDraftField('q', event.target.value)}
+                    placeholder="climate, mission, policy"
+                    className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                  />
+                </label>
 
-            <label className="text-sm font-medium text-slate-700">
-              From
-              <input
-                type="date"
-                value={draftFilters.from}
-                onChange={(event) => setDraftField('from', event.target.value)}
-                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
-              />
-            </label>
+                <label className="text-sm font-medium text-slate-700">
+                  Author ID
+                  <input
+                    value={draftFilters.authorId}
+                    onChange={(event) =>
+                      setDraftField('authorId', event.target.value)
+                    }
+                    inputMode="numeric"
+                    placeholder="1"
+                    className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                  />
+                </label>
 
-            <label className="text-sm font-medium text-slate-700">
-              To
-              <input
-                type="date"
-                value={draftFilters.to}
-                onChange={(event) => setDraftField('to', event.target.value)}
-                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
-              />
-            </label>
-
-            <label className="text-sm font-medium text-slate-700">
-              Sort
-              <select
-                value={draftFilters.sort}
-                onChange={(event) =>
-                  setDraftField('sort', event.target.value as SortField)
-                }
-                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
-              >
-                {SORT_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="text-sm font-medium text-slate-700">
-              Order
-              <select
-                value={draftFilters.order}
-                onChange={(event) =>
-                  setDraftField('order', event.target.value as SortOrder)
-                }
-                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
-              >
-                {ORDER_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-4">
-              <button
-                type="submit"
-                className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-              >
-                Apply Filters
-              </button>
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
-              >
-                Reset
-              </button>
-            </div>
-          </form>
-        </section>
-
-        <section className="reveal reveal-delay-2 rounded-3xl border border-slate-900/10 bg-white/85 p-5 shadow-sm sm:p-6">
-          <div className="flex flex-wrap items-baseline justify-between gap-3">
-            <h2 className="text-2xl font-semibold text-slate-900">
-              Latest Posts
-            </h2>
-            <p className="text-sm text-slate-600">
-              Showing {resultsStart}-{resultsEnd} of {pagination.total}
-            </p>
-          </div>
-
-          {postsError ? (
-            <div className="mt-4 rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-              Post request failed: {postsError}
-            </div>
-          ) : null}
-
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            {isLoadingPosts
-              ? Array.from({ length: loadingCardCount }, (_, index) => (
-                  <article
-                    key={`skeleton-${index}`}
-                    className="animate-pulse rounded-2xl border border-slate-200 bg-slate-100/70 p-5"
+                <label className="text-sm font-medium text-slate-700">
+                  Results / page
+                  <select
+                    value={draftFilters.perPage}
+                    onChange={(event) =>
+                      setDraftField('perPage', event.target.value)
+                    }
+                    className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
                   >
-                    <div className="h-6 w-2/3 rounded bg-slate-200" />
-                    <div className="mt-3 h-3 w-5/6 rounded bg-slate-200" />
-                    <div className="mt-2 h-3 w-4/6 rounded bg-slate-200" />
-                    <div className="mt-5 h-3 w-1/3 rounded bg-slate-200" />
-                  </article>
-                ))
-              : null}
+                    {PER_PAGE_OPTIONS.map((value) => (
+                      <option key={value} value={value}>
+                        {value}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-            {!isLoadingPosts && posts.length === 0 ? (
-              <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600 sm:col-span-2">
-                No posts match the current filter combination.
-              </article>
-            ) : null}
+                <label className="text-sm font-medium text-slate-700">
+                  From
+                  <input
+                    type="date"
+                    value={draftFilters.from}
+                    onChange={(event) =>
+                      setDraftField('from', event.target.value)
+                    }
+                    className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                  />
+                </label>
 
-            {!isLoadingPosts
-              ? posts.map((post) => (
-                  <article
-                    key={post.id}
-                    className="group flex h-full flex-col rounded-2xl border border-slate-900/10 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                <label className="text-sm font-medium text-slate-700">
+                  To
+                  <input
+                    type="date"
+                    value={draftFilters.to}
+                    onChange={(event) =>
+                      setDraftField('to', event.target.value)
+                    }
+                    className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                  />
+                </label>
+
+                <label className="text-sm font-medium text-slate-700">
+                  Sort
+                  <select
+                    value={draftFilters.sort}
+                    onChange={(event) =>
+                      setDraftField('sort', event.target.value as SortField)
+                    }
+                    className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
                   >
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="rounded-full border border-slate-300 px-2.5 py-1 text-xs font-semibold tracking-wide text-slate-600">
-                        Post #{post.id}
-                      </span>
-                      <time
-                        dateTime={post.published_at}
-                        className="text-xs font-medium text-slate-500"
+                    {SORT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="text-sm font-medium text-slate-700">
+                  Order
+                  <select
+                    value={draftFilters.order}
+                    onChange={(event) =>
+                      setDraftField('order', event.target.value as SortOrder)
+                    }
+                    className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                  >
+                    {ORDER_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-4">
+                  <button
+                    type="submit"
+                    className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                  >
+                    Apply Filters
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </form>
+            </section>
+
+            <section className="reveal reveal-delay-2 rounded-3xl border border-slate-900/10 bg-white/85 p-5 shadow-sm sm:p-6">
+              <div className="flex flex-wrap items-baseline justify-between gap-3">
+                <h2 className="text-2xl font-semibold text-slate-900">
+                  Latest Posts
+                </h2>
+                <p className="text-sm text-slate-600">
+                  Showing {resultsStart}-{resultsEnd} of {pagination.total}
+                </p>
+              </div>
+
+              {postsError ? (
+                <div className="mt-4 rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                  Post request failed: {postsError}
+                </div>
+              ) : null}
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                {isLoadingPosts
+                  ? Array.from({ length: loadingCardCount }, (_, index) => (
+                      <article
+                        key={`skeleton-${index}`}
+                        className="animate-pulse rounded-2xl border border-slate-200 bg-slate-100/70 p-5"
                       >
-                        {formatDate(post.published_at)}
-                      </time>
-                    </div>
+                        <div className="h-6 w-2/3 rounded bg-slate-200" />
+                        <div className="mt-3 h-3 w-5/6 rounded bg-slate-200" />
+                        <div className="mt-2 h-3 w-4/6 rounded bg-slate-200" />
+                        <div className="mt-5 h-3 w-1/3 rounded bg-slate-200" />
+                      </article>
+                    ))
+                  : null}
 
-                    <h3 className="mt-3 text-xl font-semibold text-slate-900 transition group-hover:text-teal-700">
-                      {post.title}
-                    </h3>
-
-                    <p className="mt-3 text-sm leading-relaxed text-slate-700">
-                      {post.summary || clipBody(post.body)}
-                    </p>
+                {!isLoadingPosts && posts.length === 0 ? (
+                  <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600 sm:col-span-2">
+                    No posts match the current filter combination.
                   </article>
-                ))
-              : null}
-          </div>
+                ) : null}
 
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
-            <p className="text-sm text-slate-600">
-              Page {pagination.page} of {Math.max(pagination.total_pages, 1)}
-            </p>
+                {!isLoadingPosts
+                  ? posts.map((post) => (
+                      <article
+                        key={post.id}
+                        onClick={() => goToDetail(post.id)}
+                        className="group flex h-full cursor-pointer flex-col rounded-2xl border border-slate-900/10 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="rounded-full border border-slate-300 px-2.5 py-1 text-xs font-semibold tracking-wide text-slate-600">
+                            Post #{post.id}
+                          </span>
+                          <time
+                            dateTime={post.published_at}
+                            className="text-xs font-medium text-slate-500"
+                          >
+                            {formatDate(post.published_at)}
+                          </time>
+                        </div>
 
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
-                disabled={!hasPrevious || isLoadingPosts}
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Previous
-              </button>
-              <button
-                type="button"
-                onClick={() => setPage((current) => current + 1)}
-                disabled={!hasNext || isLoadingPosts}
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        </section>
+                        <h3 className="mt-3 text-xl font-semibold text-slate-900 transition group-hover:text-teal-700">
+                          {post.title}
+                        </h3>
+
+                        <p className="mt-3 text-sm leading-relaxed text-slate-700">
+                          {post.summary || clipBody(post.body)}
+                        </p>
+                      </article>
+                    ))
+                  : null}
+              </div>
+
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
+                <p className="text-sm text-slate-600">
+                  Page {pagination.page} of{' '}
+                  {Math.max(pagination.total_pages, 1)}
+                </p>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPage((current) => Math.max(1, current - 1))
+                    }
+                    disabled={!hasPrevious || isLoadingPosts}
+                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPage((current) => current + 1)}
+                    disabled={!hasNext || isLoadingPosts}
+                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
       </div>
     </main>
   );
