@@ -1,11 +1,14 @@
-
 import 'dotenv/config';
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { Pool } from 'pg';
-
+import {
+  getConnectionString,
+  getPoolConfig,
+  isLocalConnection,
+} from '../src/db/connectionConfig.js';
 
 const RETRIES = 20;
 const RETRY_DELAY_MS = 1000;
@@ -29,16 +32,31 @@ async function waitForDatabase(pool) {
 }
 
 async function run() {
-  const databaseUrl = process.env.DATABASE_URL;
+  const connectionString = getConnectionString();
+  const allowDestructiveOperations =
+    process.env.ALLOW_DESTRUCTIVE_DB_OPERATIONS === 'true';
 
-  if (!databaseUrl) {
-    console.error('Error: DATABASE_URL is not set.');
-    console.error('Make sure you have a .env file with DATABASE_URL defined.');
-    console.error('You can copy .env.example to .env to get started.');
+  if (
+    connectionString &&
+    !allowDestructiveOperations &&
+    !isLocalConnection(connectionString)
+  ) {
+    console.error(
+      'Refusing to run db:seed against a non-local database. ' +
+        'Set ALLOW_DESTRUCTIVE_DB_OPERATIONS=true to override.',
+    );
     process.exit(1);
   }
 
-  const pool = new Pool({ connectionString: databaseUrl });
+  let pool;
+
+  try {
+    pool = new Pool(getPoolConfig());
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    console.error('You can copy .env.example to .env to get started.');
+    process.exit(1);
+  }
 
   try {
     await waitForDatabase(pool);

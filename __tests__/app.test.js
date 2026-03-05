@@ -1,8 +1,30 @@
-import { describe, expect, test, afterAll } from '@jest/globals';
+import { describe, expect, test, afterAll, afterEach } from '@jest/globals';
 import request from 'supertest';
 
 import app from '../src/app.js';
 import pool from '../src/db/pool.js';
+
+const createdPostIds = new Set();
+
+async function createPost(payload) {
+  const response = await request(app).post('/api/posts').send(payload);
+
+  if (response.status === 201 && Number.isInteger(response.body?.id)) {
+    createdPostIds.add(response.body.id);
+  }
+
+  return response;
+}
+
+afterEach(async () => {
+  if (createdPostIds.size === 0) {
+    return;
+  }
+
+  const ids = [...createdPostIds];
+  createdPostIds.clear();
+  await pool.query('DELETE FROM posts WHERE id = ANY($1::int[])', [ids]);
+});
 
 afterAll(async () => {
   await pool.end();
@@ -79,23 +101,23 @@ describe('API', () => {
   });
 
   test('POST /api/posts creates a post and returns 201', async () => {
-    const response = await request(app)
-      .post('/api/posts')
-      .send({ title: 'Test Post', body: 'Test body content', author_ids: [1] });
+    const response = await createPost({
+      title: `Test Post ${Date.now()}`,
+      body: 'Test body content',
+      author_ids: [1],
+    });
 
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty('id');
-    expect(response.body.title).toBe('Test Post');
+    expect(response.body.title).toContain('Test Post');
   });
 
   test('POST /api/posts with multiple authors returns 201', async () => {
-    const response = await request(app)
-      .post('/api/posts')
-      .send({
-        title: 'Collab Post',
-        body: 'Written by two authors',
-        author_ids: [1, 2],
-      });
+    const response = await createPost({
+      title: `Collab Post ${Date.now()}`,
+      body: 'Written by two authors',
+      author_ids: [1, 2],
+    });
 
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty('id');
@@ -110,9 +132,11 @@ describe('API', () => {
   });
 
   test('PATCH /api/posts/:id updates a post', async () => {
-    const created = await request(app)
-      .post('/api/posts')
-      .send({ title: 'To Update', body: 'Original body', author_ids: [1] });
+    const created = await createPost({
+      title: `To Update ${Date.now()}`,
+      body: 'Original body',
+      author_ids: [1],
+    });
 
     const response = await request(app)
       .patch(`/api/posts/${created.body.id}`)
@@ -124,9 +148,11 @@ describe('API', () => {
   });
 
   test('DELETE /api/posts/:id returns 204', async () => {
-    const created = await request(app)
-      .post('/api/posts')
-      .send({ title: 'To Delete', body: 'Will be removed', author_ids: [1] });
+    const created = await createPost({
+      title: `To Delete ${Date.now()}`,
+      body: 'Will be removed',
+      author_ids: [1],
+    });
 
     const response = await request(app).delete(`/api/posts/${created.body.id}`);
     expect(response.status).toBe(204);
