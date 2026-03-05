@@ -5,8 +5,14 @@
   "type": "module",
   "description": "Express API for news articles with PostgreSQL database",
   "scripts": {
-    "dev": "nodemon src/server.js",
+    "dev": "concurrently -k -n api,web \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "nodemon --watch src --watch scripts --watch .env --ext js,json src/server.js",
+    "dev:web": "npm run dev --prefix frontend",
+    "dev:all": "npm run dev",
     "start": "node src/server.js",
+    "build:web": "npm run build --prefix frontend",
+    "typecheck:web": "npm run typecheck --prefix frontend",
+    "test:web": "npm run test --prefix frontend",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
     "lint": "eslint .",
     "db:up": "docker compose up -d",
@@ -27,6 +33,7 @@
     "pg": "^8.13.1"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "eslint": "^8.57.0",
     "jest": "^29.7.0",
     "nodemon": "^3.1.9",

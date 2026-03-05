@@ -1,6 +1,7 @@
 node_modules
 .env
 dist
+/frontend/dist
 coverage
 npm-debug.log*
 .DS_Store
