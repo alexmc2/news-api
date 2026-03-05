@@ -9,6 +9,8 @@ import type {
   Tag,
 } from './types';
 
+const BASE_URL = import.meta.env.VITE_API_URL ?? '';
+
 type ErrorPayload = {
   message?: string;
   status?: number;
@@ -43,7 +45,7 @@ async function readError(response: Response): Promise<ApiRequestError> {
 }
 
 async function apiGet<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(path, { signal });
+  const response = await fetch(`${BASE_URL}${path}`, { signal });
 
   if (!response.ok) {
     throw await readError(response);
@@ -57,7 +59,7 @@ async function apiPost<T>(
   body: unknown,
   signal?: AbortSignal,
 ): Promise<T> {
-  const response = await fetch(path, {
+  const response = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -76,7 +78,7 @@ async function apiPatch<T>(
   body: unknown,
   signal?: AbortSignal,
 ): Promise<T> {
-  const response = await fetch(path, {
+  const response = await fetch(`${BASE_URL}${path}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -91,7 +93,10 @@ async function apiPatch<T>(
 }
 
 async function apiDelete(path: string, signal?: AbortSignal): Promise<void> {
-  const response = await fetch(path, { method: 'DELETE', signal });
+  const response = await fetch(`${BASE_URL}${path}`, {
+    method: 'DELETE',
+    signal,
+  });
 
   if (!response.ok) {
     throw await readError(response);
