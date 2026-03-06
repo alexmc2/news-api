@@ -127,6 +127,19 @@ function shouldRejectUnauthorized() {
   return sslMode === 'verify-ca' || sslMode === 'verify-full';
 }
 
+function getPoolMax() {
+  const raw = process.env.DB_POOL_MAX;
+  if (raw !== undefined) {
+    const parsed = parseInt(raw, 10);
+    if (!Number.isNaN(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+  // Railway hobby Postgres caps total connections at ~25.
+  // Keep the per-process pool small so multiple instances don't exhaust it.
+  return 5;
+}
+
 function getPoolConfig() {
   const connectionString = getConnectionString();
 
@@ -141,6 +154,9 @@ function getPoolConfig() {
     ssl: shouldUseSsl(connectionString)
       ? { rejectUnauthorized: shouldRejectUnauthorized() }
       : false,
+    max: getPoolMax(),
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
   };
 }
 
